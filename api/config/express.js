@@ -43,7 +43,7 @@ module.exports = () => {
         })(req, res, next);
     });
 
-    const routes = require("../routes")(app);
-
+    const routes = require("../routes");
+    routes(app);
     return app;
 };

@@ -2,7 +2,7 @@ const jwt = require("jwt-simple");
 const passport = require("passport");
 const { ExtractJwt, Strategy } = require("passport-jwt");
 const User = require("../models/user");
-const { validationResult, check } = require("express-validator");
+const { validationResult } = require("express-validator");
 const moment = require("moment");
 class Auth {
     constructor() {
@@ -37,7 +37,7 @@ class Auth {
                 secretOrKey: process.env.JWT_SECRET,
                 jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
                 passReqToCallback: true,
-            }; 
+            };
 
             return new Strategy(params, (req, payload, done) => {
                 console.log("payload " + payload);
@@ -87,12 +87,11 @@ class Auth {
 
                 let token = await this.genToken(user);
 
-                const refreshToken = await User.updateOne(
-                    { username: user.username },
-                    token
-                );
+                await User.updateOne({ username: user.username }, token);
 
-                const dataUser = await User.findOne({username: username}).exec();
+                const dataUser = await User.findOne({
+                    username: username,
+                }).exec();
                 res.status(200).json(dataUser);
             } catch (err) {
                 res.status(200).json({
