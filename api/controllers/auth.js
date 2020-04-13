@@ -88,7 +88,7 @@ class Auth {
                 let token = await this.genToken(user);
 
                 await User.updateOne({ username: user.username }, token);
-
+                
                 const dataUser = await User.findOne({
                     username: username,
                 }).exec();
