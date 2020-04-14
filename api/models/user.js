@@ -14,7 +14,7 @@ const userSchema = new Schema({
     accessToken: String,
     accessTokenExpiredAt: Date,
     refreshToken: String,
-    refreshTokenExpiredAt: Date 
+    refreshTokenExpiredAt: Date,
 });
 
 userSchema.pre("save", function (next) {
@@ -40,6 +40,5 @@ userSchema.methods.comparePassword = function (candidatePassword) {
         });
     });
 };
-
 
 module.exports = model("User", userSchema);

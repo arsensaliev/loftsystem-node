@@ -18,15 +18,13 @@ module.exports = () => {
     app.all(process.env.API_BASE + "*", (req, res, next) => {
         if (req.path.includes(process.env.API_BASE + "registration"))
             return next();
-        if (req.path.includes(process.env.API_BASE + "login"))
-            return next();
+        if (req.path.includes(process.env.API_BASE + "login")) return next();
 
         return auth.authenticate((err, user, info) => {
             if (err) {
                 return next(err);
             }
-            console.log(user);
-            console.log(info);
+
             if (!user) {
                 if (info.name === "TokenExpiredError") {
                     return res.status(401).json({
@@ -38,7 +36,8 @@ module.exports = () => {
                     return res.status(401).json({ message: info.message });
                 }
             }
-            app.set("user", user);
+            // app.set("user", user);
+            req.user = user;
             return next();
         })(req, res, next);
     });

@@ -1,9 +1,7 @@
-const jwt = require("jwt-simple");
 const passport = require("passport");
 const { ExtractJwt, Strategy } = require("passport-jwt");
 const User = require("../models/user");
-const { validationResult } = require("express-validator");
-const moment = require("moment");
+const { createToken } = require("./tokens");
 class Auth {
     constructor() {
         this.initialize = () => {
@@ -14,24 +12,6 @@ class Auth {
         this.authenticate = (callback) =>
             passport.authenticate("jwt", { session: false }, callback);
 
-        this.genToken = (user) => {
-            let expires = moment().utc().add({ days: 7 }).unix();
-            let token = jwt.encode(
-                {
-                    exp: expires,
-                    username: user.username,
-                },
-                process.env.JWT_SECRET
-            );
-
-            return {
-                accessToken: "Bearer " + token,
-                accessTokenExpiredAt: moment.unix(expires).format(),
-                refreshToken: token + "123123543",
-                refreshTokenExpiredAt: moment.unix(expires).format(),
-            };
-        };
-
         this.getStrategy = () => {
             const params = {
                 secretOrKey: process.env.JWT_SECRET,
@@ -40,8 +20,7 @@ class Auth {
             };
 
             return new Strategy(params, (req, payload, done) => {
-                console.log("payload " + payload);
-                User.findOne({ username: payload.username }, (err, user) => {
+                User.findOne({ _id: payload.userId }, (err, user) => {
                     if (err) {
                         return done(err);
                     }
@@ -50,6 +29,8 @@ class Auth {
                             message: "The user in the token was not found",
                         });
                     }
+                    // console.log(user);
+
                     return done(null, user);
                 });
             });
@@ -57,19 +38,7 @@ class Auth {
 
         this.login = async (req, res) => {
             try {
-                const { username, password } = req.body;
-                const errors = validationResult(req);
-
-                if (!errors.isEmpty()) {
-                    return res.status(400).json({
-                        errors: errors.array(),
-                        message: "Некорректный данные при регистрации",
-                    });
-                }
-
-                const user = await User.findOne({
-                    username: username,
-                }).exec();
+                const user = await this.findUser(req.body.username);
 
                 if (!user) {
                     return res
@@ -77,24 +46,29 @@ class Auth {
                         .json({ message: "Пользователь не найден" });
                 }
 
-                const success = await user.comparePassword(password);
+                const success = await user.comparePassword(req.body.password);
 
                 if (!success) {
-                    return res
-                        .status(400)
-                        .json({ message: "Неверный пароль, попробуйте снова" });
+                    return res.status(400).json({ message: "Неверный пароль" });
                 }
 
-                let token = await this.genToken(user);
+                const tokens = await createToken(user._id);
+                // console.log(tokens);
+                // const image = user.image
+                //     ? await toBase64.encode(user.image)
+                //     : null;
 
-                await User.updateOne({ username: user.username }, token);
-                
-                const dataUser = await User.findOne({
-                    username: username,
-                }).exec();
-                res.status(200).json(dataUser);
+                const responce = {
+                    id: user._id,
+                    username: user.username,
+                    surName: user.surName,
+                    firstName: user.firstName,
+                    middleName: user.middleName,
+                    permission: user.permission,
+                };
+                res.json({ ...responce, ...tokens });
             } catch (err) {
-                res.status(200).json({
+                res.status(500).json({
                     message: "Что-то пошло не так, попробуйте снова",
                 });
             }
@@ -102,72 +76,55 @@ class Auth {
 
         this.register = async (req, res) => {
             try {
-                const errors = validationResult(req);
-
-                if (!errors.isEmpty()) {
-                    return res.status(400).json({
-                        errors: errors.array(),
-                        message: "Некорректный данные при регистрации",
-                    });
+                const newUser = await this.createUser(req.body);
+                // console.log(newUser);
+                if (newUser.error) {
+                    return res
+                        .status(newUser.status)
+                        .json({ message: newUser.message });
                 }
 
-                const {
-                    password,
-                    username,
-                    surName,
-                    firstName,
-                    middleName,
-                } = req.body;
-
-                const candidate = await User.findOne({ username });
-
-                if (candidate) {
-                    res.status(400).json({
-                        message: "Такой пользователь уже существует",
-                    });
-                }
-
-                const data = {
-                    username,
-                    password,
-                    surName,
-                    firstName,
-                    middleName,
-                    permission: {
-                        chat: {
-                            C: true,
-                            R: true,
-                            U: true,
-                            D: true,
-                        },
-                        news: {
-                            C: true,
-                            R: true,
-                            U: true,
-                            D: true,
-                        },
-                        settings: {
-                            C: true,
-                            R: true,
-                            U: true,
-                            D: true,
-                        },
-                    },
-                    ...this.genToken({ username }),
-                };
-
-                const user = new User(data);
-
-                const pass = await user.save();
-                console.log(pass);
                 res.status(201).json({
-                    message: "Пользователь успешно зарегистрирован",
-                    data: { ...data, password },
+                    message: "Пользователь создан",
+                    data: { ...newUser },
                 });
             } catch (error) {
                 console.log(error);
                 res.status(500).json({ message: "Что-то пошло не так" });
             }
+        };
+
+        this.createUser = async (data) => {
+            const candidate = await this.findUser(data.username);
+            if (candidate) {
+                return {
+                    error: true,
+                    status: 400,
+                    message: "Такой пользователь существует, попробуйте ещё!",
+                };
+            }
+
+            const permission = {
+                chat: { C: true, D: true, R: true, U: true },
+                news: { C: true, D: true, R: true, U: true },
+                settings: { C: true, D: true, R: true, U: true },
+            };
+
+            const userData = {
+                username: data.username,
+                password: data.password,
+                surName: data.surName,
+                firstName: data.firstName,
+                middleName: data.middleName,
+            };
+
+            const user = new User({ ...userData, permission });
+            await user.save();
+            return { ...userData, permission };
+        };
+
+        this.findUser = async (username) => {
+            return User.findOne({ username });
         };
     }
 }
