@@ -6,6 +6,9 @@ const userSchema = new Schema({
     surName: { type: String, required: true },
     firstName: { type: String, required: true },
     middleName: { type: String, required: true },
+    image: {
+        type: String
+    },
     permission: {
         chat: { C: Boolean, R: Boolean, U: Boolean, D: Boolean },
         news: { C: Boolean, R: Boolean, U: Boolean, D: Boolean },

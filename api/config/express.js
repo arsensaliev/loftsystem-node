@@ -44,5 +44,10 @@ module.exports = () => {
 
     const routes = require("../routes");
     routes(app);
+    app.get("/", (_req, res) => {
+        const file = path.resolve(__dirname, "build", "index.html");
+        res.sendFile(file);
+    });
+    app.get("*", (req, res) => res.redirect("/"));
     return app;
 };
