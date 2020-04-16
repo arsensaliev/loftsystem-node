@@ -2,6 +2,7 @@ const passport = require("passport");
 const { ExtractJwt, Strategy } = require("passport-jwt");
 const User = require("../models/user");
 const { createToken } = require("./tokens");
+const toBase64 = require("../helpers/encodeBase64");
 class Auth {
     constructor() {
         this.initialize = () => {
@@ -29,7 +30,6 @@ class Auth {
                             message: "The user in the token was not found",
                         });
                     }
-                    // console.log(user);
 
                     return done(null, user);
                 });
@@ -53,11 +53,10 @@ class Auth {
                 }
 
                 const tokens = await createToken(user._id);
-                // console.log(tokens);
-                // const image = user.image
-                //     ? await toBase64.encode(user.image)
-                //     : null;
-
+                const image = user.image
+                    ? await toBase64.encode(user.image)
+                    : null;
+                
                 const responce = {
                     id: user._id,
                     username: user.username,
@@ -65,6 +64,7 @@ class Auth {
                     firstName: user.firstName,
                     middleName: user.middleName,
                     permission: user.permission,
+                    image,
                 };
                 res.json({ ...responce, ...tokens });
             } catch (err) {
@@ -77,7 +77,6 @@ class Auth {
         this.register = async (req, res) => {
             try {
                 const newUser = await this.createUser(req.body);
-                // console.log(newUser);
                 if (newUser.error) {
                     return res
                         .status(newUser.status)
