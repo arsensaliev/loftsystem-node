@@ -2,14 +2,9 @@ const News = require("../models/news");
 const User = require("../models/user");
 const uuid = require("uuid").v4;
 
-const toBase64 = require("../helpers/encodeBase64");
-
-const encodePicAutors = async (newsList) => {
+const encodePicAutors = async (newsList, user) => {
     const formattedNewsList = await Promise.all(
         newsList.map(async (news) => {
-            const image = news.user.image
-                ? await toBase64.encode(news.user.image)
-                : null;
             return {
                 id: news.id,
                 created_at: news.created_at,
@@ -21,7 +16,7 @@ const encodePicAutors = async (newsList) => {
                     middleName: news.user.middleName,
                     surName: news.user.surName,
                     username: news.user.username,
-                    image,
+                    image: news.user.image,
                 },
             };
         })
@@ -35,7 +30,7 @@ module.exports = {
             const newsList = await News.find();
 
             //because send img into base64 formate ^_^
-            const encodeNewsList = await encodePicAutors(newsList);
+            const encodeNewsList = await encodePicAutors(newsList, req.user);
 
             res.status(201).json(encodeNewsList);
         } catch (e) {
@@ -46,7 +41,7 @@ module.exports = {
     createNews: async (req, res) => {
         try {
             const { title, text } = req.body;
-            const author = await User.findOne({ _id: req.user._id});
+            const author = await User.findOne({ _id: req.user._id });
             const newNews = new News({
                 id: uuid(),
                 created_at: new Date(),

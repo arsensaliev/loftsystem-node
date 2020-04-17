@@ -8,9 +8,6 @@ module.exports = {
 
             const formattedUserList = await Promise.all(
                 userlist.map(async (user) => {
-                    const image = user.image
-                        ? await toBase64.encode(user.image)
-                        : null;
                     return {
                         id: user._id,
                         username: user.username,
@@ -18,7 +15,6 @@ module.exports = {
                         firstName: user.firstName,
                         middleName: user.middleName,
                         permission: user.permission,
-                        image,
                     };
                 })
             );
