@@ -53,10 +53,7 @@ class Auth {
                 }
 
                 const tokens = await createToken(user._id);
-                const image = user.image
-                    ? await toBase64.encode(user.image)
-                    : null;
-                
+
                 const responce = {
                     id: user._id,
                     username: user.username,
@@ -64,7 +61,7 @@ class Auth {
                     firstName: user.firstName,
                     middleName: user.middleName,
                     permission: user.permission,
-                    image,
+                    image: user.image
                 };
                 res.json({ ...responce, ...tokens });
             } catch (err) {

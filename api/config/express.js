@@ -36,6 +36,7 @@ module.exports = () => {
                     return res.status(401).json({ message: info.message });
                 }
             }
+
             // app.set("user", user);
             req.user = user;
             return next();
