@@ -25,8 +25,8 @@ const createToken = (userId) => {
     const verifyRefresh = jwt.verify(refreshToken, process.env.JWT_SECRET);
 
     return {
-        accessToken: token,
-        refreshToken:  refreshToken,
+        accessToken: "Bearer " + token,
+        refreshToken: "Bearer " + refreshToken,
         accessTokenExpiredAt: verifyToken.exp * 1000,
         refreshTokenExpiredAt: verifyRefresh.exp * 1000,
     };
@@ -42,7 +42,7 @@ const refreshToken = async (refreshToken) => {
     const user = await User.findById({ _id: userId });
 
     if (user) {
-        return await createToken(user);
+        return await createToken(user._id);
     } else {
         return {};
     }
@@ -50,5 +50,5 @@ const refreshToken = async (refreshToken) => {
 
 module.exports = {
     refreshToken,
-    createToken
-}
+    createToken,
+};

@@ -39,7 +39,12 @@ module.exports.updateUser = async (req, res) => {
                 fs.renameSync(files.avatar.path, photoPath);
                 image = await toBase64.encode(photoPath, files.avatar.type);
             }
-            
+            // for (let newdata in fields) {
+            //     if (fields[newdata] === "") {
+            //         delete fields[newdata];
+            //     }
+            // }
+
             const updateUser = await User.findOneAndUpdate(
                 { _id: req.user._id },
                 { ...fields, image },
