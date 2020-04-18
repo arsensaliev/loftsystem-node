@@ -57,7 +57,7 @@ module.exports = (htpp) => {
         });
 
         socket.on("disconnect", (data) => {
-            socket.broadcast.emit("users:leave", users[socket.id]);
+            socket.broadcast.emit("users:leave", socket.id);
 
             users.forEach((user, index) => {
                 if (user.socketId === socket.id) users.splice(index, 1);
