@@ -22,7 +22,7 @@ module.exports = (htpp) => {
         });
 
         socket.on("message:add", async (message) => {
-            let dialog = new Object();
+            let dialog = {};
             const newMessage = new Chat(message);
             await newMessage.save();
 

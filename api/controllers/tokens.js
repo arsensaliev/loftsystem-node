@@ -25,8 +25,8 @@ const createToken = (userId) => {
     const verifyRefresh = jwt.verify(refreshToken, process.env.JWT_SECRET);
 
     return {
-        accessToken: "Bearer " + token,
-        refreshToken: "Bearer " + refreshToken,
+        accessToken: token,
+        refreshToken:  refreshToken,
         accessTokenExpiredAt: verifyToken.exp * 1000,
         refreshTokenExpiredAt: verifyRefresh.exp * 1000,
     };

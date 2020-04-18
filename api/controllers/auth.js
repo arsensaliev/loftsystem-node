@@ -2,7 +2,6 @@ const passport = require("passport");
 const { ExtractJwt, Strategy } = require("passport-jwt");
 const User = require("../models/user");
 const { createToken } = require("./tokens");
-const toBase64 = require("../helpers/encodeBase64");
 class Auth {
     constructor() {
         this.initialize = () => {
@@ -16,12 +15,19 @@ class Auth {
         this.getStrategy = () => {
             const params = {
                 secretOrKey: process.env.JWT_SECRET,
-                jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+                // jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+                jwtFromRequest: function (req) {
+                    var token = null;
+                    if (req && req.headers) {
+                        token = req.headers["authorization"];
+                    }
+                    return token;
+                },
                 passReqToCallback: true,
             };
 
-            return new Strategy(params, (req, payload, done) => {
-                User.findOne({ _id: payload.userId }, (err, user) => {
+            return new Strategy(params, async (req, payload, done) => {
+                await User.findOne({ _id: payload.userId }, (err, user) => {
                     if (err) {
                         return done(err);
                     }
@@ -61,7 +67,7 @@ class Auth {
                     firstName: user.firstName,
                     middleName: user.middleName,
                     permission: user.permission,
-                    image: user.image
+                    image: user.image,
                 };
                 res.json({ ...responce, ...tokens });
             } catch (err) {
